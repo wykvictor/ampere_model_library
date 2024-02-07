@@ -65,7 +65,7 @@ class ImageNet(ImageDataset):
                 labels.append(label + 1)
             else:
                 labels.append(label)
-        return file_names, labels
+        return file_names*50, labels*50
 
     def __get_path_to_img(self):
         """

@@ -20,7 +20,7 @@ class PyTorchRunner(Runner):
 
     def __init__(self,
                  model,
-                 disable_jit_freeze=False, example_inputs=None, func=None, skip_script=False, throughput_only=False):
+                 disable_jit_freeze=False, example_inputs=None, func=None, skip_script=False, throughput_only=False, fp16=False):
         super().__init__(throughput_only)
         AIO = '_aio_profiler_print' in dir(torch._C)
         if AIO:
@@ -34,6 +34,8 @@ class PyTorchRunner(Runner):
         self._model = model
         self._func = func
         self._model.eval()
+        if fp16:
+            self._model = self._model.half()
         self._frozen_script = None
 
         self._do_autocast = os.environ.get("ENABLE_BF16_X86") == "1"
@@ -85,6 +87,10 @@ class PyTorchRunner(Runner):
                 print(f"Cached to file at {cached_path}")
 
         self._is_profiling = aio_profiler_enabled()
+        if fp16:
+            self._model = self._model.half()
+            if self._frozen_script:
+                self._frozen_script = self._frozen_script.half()
 
         print("\nRunning with PyTorch\n")
 
@@ -105,6 +111,7 @@ class PyTorchRunner(Runner):
 
             with context:
                 start = time.time()
+                # import ipdb; ipdb.set_trace()
                 output = model(*args, **kwargs)
                 finish = time.time()
                 if self._gpu:
